@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spelling Safari</title>
+<style>
+  body {
+    font-family: Comic Sans MS, sans-serif;
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffd1dc, #ffe0f0);
+  }
+  h1 {
+    background: #ff99c8;
+    padding: 15px;
+    border-radius: 10px;
+    color: white;
+  }
+  #menu button, #game button {
+    padding: 10px 20px; margin: 10px; font-size: 1em;
+    background: #ff66a3; color: white; border: none; border-radius: 8px; cursor: pointer;
+  }
+  #game { margin-top: 20px; }
+  .question { font-size: 1.5em; margin: 20px; white-space: pre-line; }
+  input { font-size: 1.2em; padding: 5px; margin: 10px; }
+  .correct { color: green; font-weight: bold; }
+  .incorrect { color: red; font-weight: bold; }
+  #safari-emoji { font-size: 80px; margin: 20px; display:none; }
+</style>
+</head>
+<body>
+
+<h1>🦁 Spelling Safari 🦓</h1>
+<div id="menu">
+  <p>Select a level to start:</p>
+  <button onclick="startLevel(1)">1️⃣ Type the Word</button>
+  <button onclick="startLevel(2)">2️⃣ Fill the Missing Letter</button>
+  <button onclick="startLevel(3)">3️⃣ Scramble Fix</button>
+  <button onclick="startLevel(4)">4️⃣ Dictation Challenge</button>
+</div>
+
+<div id="game" style="display:none;">
+  <div class="question" id="question"></div>
+  <input type="text" id="answer" style="display:none;">
+  <div id="options"></div>
+  <div id="feedback"></div>
+  <div id="safari-emoji"></div>
+  <br>
+  <button id="checkBtn" style="display:none;">Check</button>
+  <button id="nextBtn" style="display:none;">Next Word</button>
+  <button id="repeatBtn" style="display:none;">🔊 Play Word Again</button>
+  <button id="backBtn" style="display:none;">Back to Menu</button>
+</div>
+
+<script>
+  // ✏️ UPDATE WEEKLY SPELLING LIST HERE
+  const spellingWords = ["slight","sight","silent","combine","climb","frighten","find","tie","tight","title","midnight","might","mild","mind","excite","blind","fight","pie","lie","bright","night","daylight","pilot","midnight","might","mild"];
+
+  // Safari animal emojis
+  const safariEmojis = ["🦁","🦓","🐘","🦒","🐒"];
+
+  let currentLevel = 0;
+  let currentWordIndex = 0;
+  let currentWord = "";
+
+  const menu = document.getElementById("menu");
+  const game = document.getElementById("game");
+  const questionEl = document.getElementById("question");
+  const answerEl = document.getElementById("answer");
+  const optionsEl = document.getElementById("options");
+  const feedbackEl = document.getElementById("feedback");
+  const safariEmoji = document.getElementById("safari-emoji");
+  const checkBtn = document.getElementById("checkBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const repeatBtn = document.getElementById("repeatBtn");
+  const backBtn = document.getElementById("backBtn");
+
+  function startLevel(level){
+    currentLevel = level;
+    currentWordIndex = 0;
+    menu.style.display="none";
+    game.style.display="block";
+    safariEmoji.style.display="none";
+    backBtn.style.display="inline-block";
+    showWord();
+  }
+
+  function showWord(){
+    feedbackEl.innerText="";
+    optionsEl.innerHTML="";
+    safariEmoji.style.display="none";
+    answerEl.style.display="none";
+    checkBtn.style.display="none";
+    nextBtn.style.display="none";
+    repeatBtn.style.display="none";
+
+    currentWord = spellingWords[currentWordIndex];
+
+    if(currentLevel===1){ // Type the Word
+      questionEl.innerText = "Spell this word: " + currentWord;
+      answerEl.style.display="inline-block";
+      answerEl.value="";
+      answerEl.focus();
+      checkBtn.style.display="inline-block";
+      showRandomEmoji();
+    } else if(currentLevel===2){ // Fill Missing Letter
+      const missingIndex = Math.floor(Math.random()*currentWord.length);
+      let displayWord = currentWord.split('').map((c,i)=>i===missingIndex?'_':c).join('');
+      questionEl.innerText = "Fill in the missing letter:\n" + displayWord;
+      const letters = [currentWord[missingIndex]];
+      while(letters.length<3){
+        const rand = String.fromCharCode(97 + Math.floor(Math.random()*26));
+        if(!letters.includes(rand)) letters.push(rand);
+      }
+      shuffleArray(letters).forEach(letter=>{
+        const btn = document.createElement('button');
+        btn.innerText = letter;
+        btn.onclick = ()=>{
+          if(letter===currentWord[missingIndex]){
+            feedbackEl.innerHTML="<span class='correct'>Correct!</span>";
+            showRandomEmoji();
+            nextBtn.style.display="inline-block";
+          } else {
+            feedbackEl.innerHTML="<span class='incorrect'>Try again!</span>";
+          }
+        };
+        optionsEl.appendChild(btn);
+      });
+    } else if(currentLevel===3){ // Scramble Fix
+      questionEl.innerText = "Unscramble the letters:\n" + shuffleArray(currentWord.split('')).join(' ');
+      answerEl.style.display="inline-block";
+      answerEl.value="";
+      answerEl.focus();
+      checkBtn.style.display="inline-block";
+      showRandomEmoji();
+    } else if(currentLevel===4){ // Dictation
+      questionEl.innerText = "Listen and spell the word:";
+      answerEl.style.display="inline-block";
+      answerEl.value="";
+      answerEl.focus();
+      checkBtn.style.display="inline-block";
+      repeatBtn.style.display="inline-block";
+      speakWord();
+    }
+  }
+
+  function checkAnswer(){
+    if(answerEl.value.trim().toLowerCase() === currentWord.toLowerCase()){
+      feedbackEl.innerHTML="<span class='correct'>Correct!</span>";
+      showRandomEmoji();
+      checkBtn.style.display="none";
+      nextBtn.style.display="inline-block";
+    } else {
+      feedbackEl.innerHTML="<span class='incorrect'>Try again!</span>";
+    }
+  }
+
+  function nextWord(){
+    currentWordIndex++;
+    if(currentWordIndex < spellingWords.length){
+      showWord();
+    } else {
+      questionEl.innerText="🎉 You finished all words for this level! 🎉";
+      answerEl.style.display="none";
+      optionsEl.innerHTML="";
+      nextBtn.style.display="none";
+      safariEmoji.style.display="none";
+      repeatBtn.style.display="none";
+    }
+  }
+
+  function speakWord(){
+    const msg = new SpeechSynthesisUtterance(currentWord);
+    window.speechSynthesis.speak(msg);
+  }
+
+  function showRandomEmoji(){
+    safariEmoji.innerText = safariEmojis[Math.floor(Math.random()*safariEmojis.length)];
+    safariEmoji.style.display="block";
+  }
+
+  function shuffleArray(arr){ return arr.sort(()=>Math.random()-0.5); }
+
+  checkBtn.onclick = checkAnswer;
+  nextBtn.onclick = nextWord;
+  repeatBtn.onclick = speakWord;
+  backBtn.onclick = ()=>{
+    game.style.display="none";
+    menu.style.display="block";
+    safariEmoji.style.display="none";
+    repeatBtn.style.display="none";
+  };
+</script>
+
+</body>
+</html>
