@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spelling Safari</title>
+<style>
+  body {
+    font-family: Comic Sans MS, sans-serif;
+    background-color: #fff8e6;
+    text-align: center;
+    padding: 20px;
+  }
+  h1 { background: #ffcc66; padding: 15px; border-radius: 10px; }
+  #menu button, #game button {
+    padding: 10px 20px; margin: 10px; font-size: 1em;
+    background: #ff9933; color: white; border: none; border-radius: 8px; cursor: pointer;
+  }
+  #game { margin-top: 20px; }
+  .question { font-size: 1.5em; margin: 20px; }
+  input { font-size: 1.2em; padding: 5px; margin: 10px; }
+  .correct { color: green; font-weight: bold; }
+  .incorrect { color: red; font-weight: bold; }
+  #safari-img { width: 200px; margin: 20px; display:none; }
+</style>
+</head>
+<body>
+
+<h1>🦁 Spelling Safari 🦓</h1>
+<div id="menu">
+  <p>Select a level to start:</p>
+  <button onclick="startLevel(1)">1️⃣ Type the Word</button>
+  <button onclick="startLevel(2)">2️⃣ Fill the Missing Letter</button>
+  <button onclick="startLevel(3)">3️⃣ Scramble Fix</button>
+  <button onclick="startLevel(4)">4️⃣ Dictation Challenge</button>
+</div>
+
+<div id="game" style="display:none;">
+  <div class="question" id="question"></div>
+  <input type="text" id="answer" style="display:none;">
+  <div id="options"></div>
+  <div id="feedback"></div>
+  <img id="safari-img" alt="">
+  <br>
+  <button id="checkBtn" style="display:none;">Check</button>
+  <button id="nextBtn" style="display:none;">Next Word</button>
+  <button id="backBtn" style="display:none;">Back to Menu</button>
+</div>
+
+<script>
+  // ✏️ UPDATE WEEKLY SPELLING LIST HERE
+  const spellingWords = ["because","friend","animal","school","beautiful"];
+  
+  const safariAnimals = [
+    {name:"lion", img:"https://upload.wikimedia.org/wikipedia/commons/7/73/Lion_waiting_in_Namibia.jpg"},
+    {name:"zebra", img:"https://upload.wikimedia.org/wikipedia/commons/0/0f/Plains_Zebra_Equus_quagga.jpg"},
+    {name:"elephant", img:"https://upload.wikimedia.org/wikipedia/commons/3/37/African_Bush_Elephant.jpg"},
+    {name:"giraffe", img:"https://upload.wikimedia.org/wikipedia/commons/9/9f/Giraffe_standing.jpg"},
+    {name:"monkey", img:"https://upload.wikimedia.org/wikipedia/commons/e/e5/Capuchin_Costa_Rica.jpg"}
+  ];
+
+  let currentLevel = 0;
+  let currentWordIndex = 0;
+
+  const menu = document.getElementById("menu");
+  const game = document.getElementById("game");
+  const questionEl = document.getElementById("question");
+  const answerEl = document.getElementById("answer");
+  const optionsEl = document.getElementById("options");
+  const feedbackEl = document.getElementById("feedback");
+  const safariImg = document.getElementById("safari-img");
+  const checkBtn = document.getElementById("checkBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const backBtn = document.getElementById("backBtn");
+
+  function startLevel(level) {
+    currentLevel = level;
+    currentWordIndex = 0;
+    menu.style.display = "none";
+    game.style.display = "block";
+    safariImg.style.display = "none";
+    backBtn.style.display = "inline-block";
+    showWord();
+  }
+
+  function showWord() {
+    feedbackEl.innerText = "";
+    optionsEl.innerHTML = "";
+    safariImg.style.display = "none";
+    answerEl.style.display = "none";
+    checkBtn.style.display = "none";
+    nextBtn.style.display = "none";
+
+    const word = spellingWords[currentWordIndex];
+    
+    if(currentLevel === 1){ // Type the Word
+      questionEl.innerText = "Spell this word: " + word;
+      answerEl.style.display = "inline-block";
+      answerEl.value = "";
+      answerEl.focus();
+      checkBtn.style.display = "inline-block";
+    } else if(currentLevel === 2){ // Fill the Missing Letter
+      const missingIndex = Math.floor(Math.random()*word.length);
+      questionEl.innerText = "Fill in the missing letter:";
+      let displayWord = word.split('').map((c,i)=>i===missingIndex?'_':c).join('');
+      questionEl.innerText += "\n" + displayWord;
+      const letters = [word[missingIndex]];
+      while(letters.length<3){
+        const rand = String.fromCharCode(97 + Math.floor(Math.random()*26));
+        if(!letters.includes(rand)) letters.push(rand);
+      }
+      shuffleArray(letters).forEach(letter=>{
+        const btn = document.createElement('button');
+        btn.innerText = letter;
+        btn.onclick = ()=>{
+          if(letter===word[missingIndex]){
+            feedbackEl.innerHTML="<span class='correct'>Correct!</span>";
+            safariImg.src = safariAnimals[Math.floor(Math.random()*safariAnimals.length)].img;
+            safariImg.style.display="block";
+            nextBtn.style.display="inline-block";
+          } else {
+            feedbackEl.innerHTML="<span class='incorrect'>Try again!</span>";
+          }
+        };
+        optionsEl.appendChild(btn);
+      });
+    } else if(currentLevel === 3){ // Scramble Fix
+      questionEl.innerText = "Unscramble the letters:";
+      let scrambled = shuffleArray(word.split('')).join(' ');
+      questionEl.innerText += "\n" + scrambled;
+      answerEl.style.display = "inline-block";
+      answerEl.value="";
+      answerEl.focus();
+      checkBtn.style.display = "inline-block";
+    } else if(currentLevel === 4){ // Dictation
+      questionEl.innerText = "Listen and spell the word:";
+      answerEl.style.display = "inline-block";
+      answerEl.value="";
+      answerEl.focus();
+      checkBtn.style.display = "inline-block";
+      // Speak the word
+      const msg = new SpeechSynthesisUtterance(word);
+      window.speechSynthesis.speak(msg);
+    }
+  }
+
+  function checkAnswer() {
+    const word = spellingWords[currentWordIndex];
+    if(answerEl.value.trim().toLowerCase() === word.toLowerCase()){
+      feedbackEl.innerHTML="<span class='correct'>Correct!</span>";
+      safariImg.src = safariAnimals[Math.floor(Math.random()*safariAnimals.length)].img;
+      safariImg.style.display="block";
+      checkBtn.style.display="none";
+      nextBtn.style.display="inline-block";
+    } else {
+      feedbackEl.innerHTML="<span class='incorrect'>Try again!</span>";
+    }
+  }
+
+  function nextWord() {
+    currentWordIndex++;
+    if(currentWordIndex<spellingWords.length){
+      showWord();
+    } else {
+      questionEl.innerText="🎉 You finished all words for this level! 🎉";
+      answerEl.style.display="none";
+      optionsEl.innerHTML="";
+      nextBtn.style.display="none";
+      safariImg.style.display="none";
+    }
+  }
+
+  function shuffleArray(arr){ return arr.sort(()=>Math.random()-0.5); }
+
+  checkBtn.onclick = checkAnswer;
+  nextBtn.onclick = nextWord;
+  backBtn.onclick = ()=>{
+    game.style.display="none";
+    menu.style.display="block";
+    safariImg.style.display="none";
+  };
+</script>
+
+</body>
+</html>
